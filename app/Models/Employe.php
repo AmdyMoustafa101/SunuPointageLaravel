@@ -3,11 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-
-
 
 class Employe extends Authenticatable
 {
@@ -37,9 +33,11 @@ class Employe extends Authenticatable
         return $this->belongsTo(Departement::class);
     }
 
-    // Mutateur pour hashage du mot de passe
-    protected function setPasswordAttribute($value)
+    // Mutateur pour le hashage du mot de passe
+    public function setPasswordAttribute($value)
     {
-        $this->attributes['password'] = bcrypt($value);
+        if (!empty($value)) {
+            $this->attributes['password'] = bcrypt($value);
+        }
     }
 }

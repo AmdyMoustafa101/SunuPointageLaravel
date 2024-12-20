@@ -71,10 +71,6 @@ class EmployeController extends Controller
         // Génération du matricule
         $validatedData['matricule'] = $this->generateMatricule($validatedData['role'], $validatedData['fonction']);
 
-        // Cryptage du mot de passe
-        if (isset($validatedData['password'])) {
-            $validatedData['password'] = bcrypt($validatedData['password']);
-        }
 
         // Création de l'employé
         $employe = Employe::create($validatedData);
