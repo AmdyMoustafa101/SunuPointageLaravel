@@ -3,11 +3,17 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Tymon\JWTAuth\Contracts\JWTSubject;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Notifications\Notifiable;
 
-class Employe extends Authenticatable
+
+
+class Employe extends Authenticatable implements JWTSubject
 {
-    use HasFactory;
+
 
     protected $table = 'employes';
 
@@ -27,6 +33,10 @@ class Employe extends Authenticatable
         'archived',
     ];
 
+    protected $hidden = [
+        'password', 'remember_token',
+    ];
+
     // Relation avec le modèle Département
     public function departement()
     {
@@ -40,4 +50,16 @@ class Employe extends Authenticatable
             $this->attributes['password'] = bcrypt($value);
         }
     }
+
+     // Implémentation de JWTSubject
+     public function getJWTIdentifier()
+     {
+         return $this->getKey();
+     }
+
+     public function getJWTCustomClaims()
+     {
+         return [];
+     }
+
 }
