@@ -204,6 +204,7 @@ class EmployeController extends Controller
             'fonction' => $employe->fonction,
             'matricule' => $employe->matricule,
             'adresse' => $employe->adresse,
+            'photo' => $employe->photo,
             'departement' => $employe->departement ? $employe->departement->nom : null,
         ],
         'token' => $token,
