@@ -9,11 +9,6 @@ use App\Http\Controllers\DepartementController;
 
 
 
-// Route::get('/user', function (Request $request) {
-//     return $request->user();
-// })->middleware('auth:sanctum');
-
-// Exemple de route API pour un contrôleur
 
 
 Route::apiResource('departements', DepartementController::class);
@@ -31,10 +26,10 @@ Route::post('login', [EmployeController::class, 'login']);
 
 Route::post('/logout', [EmployeController::class, 'logout'])->middleware('auth:api');
 
+Route::middleware('auth:api')->post('/enregistrer-pointage', [EmployeController::class, 'enregistrerPointage']);
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
-});
+
+
 
 
 

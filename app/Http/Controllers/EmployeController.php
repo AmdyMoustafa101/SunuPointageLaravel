@@ -194,19 +194,10 @@ class EmployeController extends Controller
     $this->sendLogToNode($logData);
 
     // Retourner une réponse avec les données de l'utilisateur
+    // Retourner une réponse avec les données de l'utilisateur
     return response()->json([
         'message' => 'Connexion réussie',
-        'user' => [
-            'nom' => $employe->nom,
-            'prenom' => $employe->prenom,
-            'email' => $employe->email,
-            'role' => $employe->role,
-            'fonction' => $employe->fonction,
-            'matricule' => $employe->matricule,
-            'adresse' => $employe->adresse,
-            'photo' => $employe->photo,
-            'departement' => $employe->departement ? $employe->departement->nom : null,
-        ],
+        'user' => $employe,
         'token' => $token,
     ], 200);
 }
@@ -268,6 +259,45 @@ public function sendLogToNode(array $logData)
     }
 }
 
+public function enregistrerPointage(Request $request)
+{
+    try {
+        // Récupérer les informations du vigile authentifié
+        $vigile = Auth::user();
 
+        if (!$vigile) {
+            return response()->json(['message' => 'Non authentifié'], 401);
+        }
+
+        // Validation des données envoyées
+        $data = $request->validate([
+            'nom' => 'required|string',
+            'prenom' => 'required|string',
+            // 'matricule' => 'required|string',
+            'role' => 'required|string',
+            'date' => 'required|date',
+            'heure_arrivee' => 'nullable|date',
+            'heure_depart' => 'nullable|date',
+        ]);
+
+        // Ajouter les informations du vigile
+        $data['vigile_nom'] = $vigile->nom;
+        $data['vigile_matricule'] = $vigile->matricule;
+
+        // Envoi des données au backend Node.js
+        $response = Http::post('http://localhost:3000/api/pointages', $data);
+
+        if ($response->successful()) {
+            return response()->json(['message' => 'Pointage enregistré avec succès'], 201);
+        } else {
+            return response()->json([
+                'message' => 'Erreur lors de l\'enregistrement du pointage',
+                'error' => $response->json(),
+            ], $response->status());
+        }
+    } catch (\Exception $e) {
+        return response()->json(['message' => 'Erreur serveur', 'error' => $e->getMessage()], 500);
+    }
+}
 
 }
