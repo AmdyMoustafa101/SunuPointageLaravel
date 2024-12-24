@@ -202,9 +202,6 @@ class EmployeController extends Controller
     ], 200);
 }
 
-
-
-
  // Fonction de déconnexion
  public function logout(Request $request)
 {
@@ -273,12 +270,14 @@ public function enregistrerPointage(Request $request)
         $data = $request->validate([
             'nom' => 'required|string',
             'prenom' => 'required|string',
-            // 'matricule' => 'required|string',
+            'matricule' => 'required|string',
             'role' => 'required|string',
             'date' => 'required|date',
-            'heure_arrivee' => 'nullable|date',
-            'heure_depart' => 'nullable|date',
+            'heure_arrivee' => 'nullable|string',
+            'heure_depart' => 'nullable|string',
         ]);
+        // Formatage de la date (YYYY-MM-DD)
+        $data['date'] = date('Y-m-d', strtotime($data['date']));
 
         // Ajouter les informations du vigile
         $data['vigile_nom'] = $vigile->nom;
