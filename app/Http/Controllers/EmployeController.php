@@ -244,7 +244,7 @@ class EmployeController extends Controller
 
 public function sendLogToNode(array $logData)
 {
-    $nodeUrl = env('NODE_API_URL', 'http://localhost:3000/api/log-access');
+    $nodeUrl = env('NODE_API_URL', 'http://localhost:3002/api/log-access');
 
     try {
         $response = Http::post($nodeUrl, $logData);
@@ -268,9 +268,11 @@ public function enregistrerPointage(Request $request)
 
         // Validation des données envoyées
         $data = $request->validate([
+            'userID' => 'required|integer',
             'nom' => 'required|string',
             'prenom' => 'required|string',
             'matricule' => 'required|string',
+            'telephone' => 'required|string',
             'role' => 'required|string',
             'date' => 'required|date',
             'heure_arrivee' => 'nullable|string',
@@ -284,7 +286,7 @@ public function enregistrerPointage(Request $request)
         $data['vigile_matricule'] = $vigile->matricule;
 
         // Envoi des données au backend Node.js
-        $response = Http::post('http://localhost:3000/api/pointages', $data);
+        $response = Http::post('http://localhost:3002/api/pointages', $data);
 
         if ($response->successful()) {
             return response()->json(['message' => 'Pointage enregistré avec succès'], 201);

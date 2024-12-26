@@ -6,6 +6,7 @@ use App\Http\Controllers\ApprenantController;
 use App\Http\Controllers\EmployeController;
 use App\Http\Controllers\CohorteController;
 use App\Http\Controllers\DepartementController;
+use App\Http\Controllers\PresenceController;
 
 
 
@@ -27,6 +28,7 @@ Route::post('login', [EmployeController::class, 'login']);
 Route::post('/logout', [EmployeController::class, 'logout'])->middleware('auth:api');
 
 Route::middleware('auth:api')->post('/enregistrer-pointage', [EmployeController::class, 'enregistrerPointage']);
+Route::get('/horaires', [PresenceController::class, 'horaires']);
 
 
 
