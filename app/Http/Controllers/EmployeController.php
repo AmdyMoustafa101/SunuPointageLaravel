@@ -286,7 +286,7 @@ public function enregistrerPointage(Request $request)
         $data['vigile_matricule'] = $vigile->matricule;
 
         // Envoi des données au backend Node.js
-        $response = Http::post('http://localhost:3002/api/pointages', $data);
+        $response = Http::post('http://localhost:3005/api/pointages', $data);
 
         if ($response->successful()) {
             return response()->json(['message' => 'Pointage enregistré avec succès'], 201);
@@ -300,5 +300,7 @@ public function enregistrerPointage(Request $request)
         return response()->json(['message' => 'Erreur serveur', 'error' => $e->getMessage()], 500);
     }
 }
+
+
 
 }

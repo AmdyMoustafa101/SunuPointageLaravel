@@ -53,5 +53,41 @@ class UserCardController extends Controller
     return response()->json(['success' => true, 'message' => 'Carte attribuée avec succès.']);
 }
 
+public function unassignCard(Request $request)
+{
+    $validated = $request->validate([
+        'userType' => 'required|string|in:employes,apprenants',
+        'userId' => 'required|integer',
+    ]);
+
+    $model = $validated['userType'] === 'employes' ? Employe::class : Apprenant::class;
+
+    $user = $model::find($validated['userId']);
+    if (!$user) {
+        return response()->json(['message' => 'Utilisateur non trouvé.'], 404);
+    }
+
+    $user->cardID = null;
+    $user->save();
+
+    return response()->json(['message' => 'Carte désattribuée avec succès.']);
+}
+
+public function getUserByCard($uid)
+{
+    $employe = Employe::where('cardID', $uid)->first();
+    $apprenant = Apprenant::where('cardID', $uid)->first();
+
+    if ($employe) {
+        return response()->json($employe, 200);
+    } elseif ($apprenant) {
+        return response()->json($apprenant, 200);
+    }
+
+    return response()->json(['message' => 'Utilisateur non trouvé'], 404);
+}
+
+
+
 
 }

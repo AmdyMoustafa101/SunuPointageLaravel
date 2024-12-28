@@ -34,6 +34,10 @@ Route::get('/horaires', [PresenceController::class, 'horaires']);
 Route::get('/employesC', [UserCardController::class, 'listEmployes']);
 Route::get('/apprenantsC', [UserCardController::class, 'listApprenants']);
 Route::post('/assign-card', [UserCardController::class, 'assignCard']);
+Route::post('/unassign-card', [UserCardController::class, 'unassignCard']);
+
+Route::get('/get-user-by-card/{uid}', [UserCardController::class, 'getUserByCard']);
+
 
 
 
