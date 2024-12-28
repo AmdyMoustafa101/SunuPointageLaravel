@@ -20,7 +20,7 @@ class CreateEmployesTable extends Migration
             $table->string('photo')->nullable(); // URL ou chemin de la photo
             $table->string('adresse');
             $table->string('telephone');
-            $table->string('cardID')->nullable(); // Attribué ultérieurement
+            $table->string('cardID')->nullable()->unique(); // Attribué ultérieurement
             $table->enum('role', ['simple', 'vigile', 'administrateur']);
             $table->string('fonction')->nullable();
             $table->string('matricule')->unique();
