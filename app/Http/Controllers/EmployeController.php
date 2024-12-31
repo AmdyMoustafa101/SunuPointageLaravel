@@ -202,6 +202,45 @@ class EmployeController extends Controller
     ], 200);
 }
 
+public function loginByCard(Request $request)
+{
+    $validated = $request->validate([
+        'cardID' => 'required|string',
+    ]);
+
+    $employe = Employe::where('cardID', $validated['cardID'])->first();
+
+    if (!$employe) {
+        return response()->json(['message' => 'Carte non attribuée'], 401);
+    }
+    // Vérification du rôle (seulement administrateur ou vigile)
+    if (!in_array($employe->role, ['administrateur', 'vigile'])) {
+
+        return response()->json(['message' => 'role non autorisée'], 403);
+    }
+
+    // Générer un token JWT
+    $token = auth('api')->login($employe);
+
+    // Enregistrer l'historique de connexion
+    $logData = [
+        'utilisateur_id' => $employe->id,
+        'card_id' => $employe->cardID,
+        'statut_acces' => 'login',
+        'nom' => $employe->nom,
+        'prenom' => $employe->prenom,
+        'fonction' => $employe->fonction,
+    ];
+    $this->sendLogToNode($logData);
+
+    return response()->json([
+        'message' => 'Connexion réussie',
+        'user' => $employe,
+        'token' => $token,
+    ], 200);
+}
+
+
  // Fonction de déconnexion
  public function logout(Request $request)
 {
@@ -244,7 +283,7 @@ class EmployeController extends Controller
 
 public function sendLogToNode(array $logData)
 {
-    $nodeUrl = env('NODE_API_URL', 'http://localhost:3002/api/log-access');
+    $nodeUrl = env('NODE_API_URL', 'http://localhost:3005/api/log-access');
 
     try {
         $response = Http::post($nodeUrl, $logData);

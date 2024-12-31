@@ -25,6 +25,8 @@ Route::apiResource('employes', EmployeController::class);
 Route::apiResource('apprenants', ApprenantController::class);
 
 Route::post('login', [EmployeController::class, 'login']);
+Route::post('login-by-card', [EmployeController::class, 'loginByCard']);
+
 
 Route::post('/logout', [EmployeController::class, 'logout'])->middleware('auth:api');
 
