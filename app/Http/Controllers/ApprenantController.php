@@ -55,4 +55,17 @@ class ApprenantController extends Controller
         $apprenant = Apprenant::findOrFail($id);
         return response()->json($apprenant, 200);
     }
+
+    // Renvoie le nombre total de cohortes et d'apprenants
+public function getCounts()
+{
+    $nombreCohortes = Cohorte::count(); // Compte le nombre total de cohortes
+    $nombreApprenants = Apprenant::count(); // Compte le nombre total d'apprenants
+
+    return response()->json([
+        'nombre_cohortes' => $nombreCohortes,
+        'nombre_apprenants' => $nombreApprenants,
+    ], 200);
+}
+
 }

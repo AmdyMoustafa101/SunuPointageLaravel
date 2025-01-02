@@ -91,6 +91,50 @@ class EmployeController extends Controller
         return strtoupper($prefixRole . $prefixFonction . $year . $uniqueNumber);
     }
 
+/**
+ * Changer le mot de passe de l'utilisateur connecté.
+ */
+public function changePassword(Request $request, $email)
+{
+    // Validation des champs
+    $validated = $request->validate([
+        'new_password' => 'required|string|min:8|confirmed',
+    ]);
+
+    // Récupérer l'utilisateur par son email depuis l'URL
+    $employe = Employe::where('email', $email)->first();
+
+    if (!$employe) {
+        return response()->json(['message' => 'Utilisateur non trouvé'], 404);
+    }
+
+    // Vérifier si l'utilisateur a un rôle administrateur ou vigile
+    if (!in_array($employe->role, ['administrateur', 'vigile'])) {
+        return response()->json(['message' => 'Accès refusé. Vous n\'avez pas les droits nécessaires.'], 403);
+    }
+
+    // Mettre à jour le mot de passe (le mutateur le hash automatiquement)
+    $employe->password = $validated['new_password'];
+    $employe->save();
+
+    return response()->json(['message' => 'Mot de passe changé avec succès'], 200);
+}
+
+
+
+/**
+ * Récupérer le nombre total d'employés et de départements.
+ */
+public function getCounts()
+{
+    $nombreEmployes = Employe::count(); // Nombre total d'employés
+    $nombreDepartements = Departement::count(); // Nombre total de départements
+
+    return response()->json([
+        'nombre_employes' => $nombreEmployes,
+        'nombre_departements' => $nombreDepartements,
+    ], 200);
+}
 
 
     /**
@@ -194,24 +238,13 @@ class EmployeController extends Controller
     $this->sendLogToNode($logData);
 
     // Retourner une réponse avec les données de l'utilisateur
+    // Retourner une réponse avec les données de l'utilisateur
     return response()->json([
         'message' => 'Connexion réussie',
-        'user' => [
-            'nom' => $employe->nom,
-            'prenom' => $employe->prenom,
-            'email' => $employe->email,
-            'role' => $employe->role,
-            'fonction' => $employe->fonction,
-            'matricule' => $employe->matricule,
-            'adresse' => $employe->adresse,
-            'departement' => $employe->departement ? $employe->departement->nom : null,
-        ],
+        'user' => $employe,
         'token' => $token,
     ], 200);
 }
-
-
-
 
  // Fonction de déconnexion
  public function logout(Request $request)
@@ -255,7 +288,7 @@ class EmployeController extends Controller
 
 public function sendLogToNode(array $logData)
 {
-    $nodeUrl = env('NODE_API_URL', 'http://localhost:3000/api/log-access');
+    $nodeUrl = env('NODE_API_URL', 'http://localhost:3002/api/log-access');
 
     try {
         $response = Http::post($nodeUrl, $logData);
@@ -264,6 +297,51 @@ public function sendLogToNode(array $logData)
         }
     } catch (\Exception $e) {
         Log::error('Erreur lors de l\'envoi du log à Node.js', ['exception' => $e->getMessage()]);
+    }
+}
+
+public function enregistrerPointage(Request $request)
+{
+    try {
+        // Récupérer les informations du vigile authentifié
+        $vigile = Auth::user();
+
+        if (!$vigile) {
+            return response()->json(['message' => 'Non authentifié'], 401);
+        }
+
+        // Validation des données envoyées
+        $data = $request->validate([
+            'userID' => 'required|integer',
+            'nom' => 'required|string',
+            'prenom' => 'required|string',
+            'matricule' => 'required|string',
+            'telephone' => 'required|string',
+            'role' => 'required|string',
+            'date' => 'required|date',
+            'heure_arrivee' => 'nullable|string',
+            'heure_depart' => 'nullable|string',
+        ]);
+        // Formatage de la date (YYYY-MM-DD)
+        $data['date'] = date('Y-m-d', strtotime($data['date']));
+
+        // Ajouter les informations du vigile
+        $data['vigile_nom'] = $vigile->nom;
+        $data['vigile_matricule'] = $vigile->matricule;
+
+        // Envoi des données au backend Node.js
+        $response = Http::post('http://localhost:3005/api/pointages', $data);
+
+        if ($response->successful()) {
+            return response()->json(['message' => 'Pointage enregistré avec succès'], 201);
+        } else {
+            return response()->json([
+                'message' => 'Erreur lors de l\'enregistrement du pointage',
+                'error' => $response->json(),
+            ], $response->status());
+        }
+    } catch (\Exception $e) {
+        return response()->json(['message' => 'Erreur serveur', 'error' => $e->getMessage()], 500);
     }
 }
 
