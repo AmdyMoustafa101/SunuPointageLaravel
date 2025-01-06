@@ -20,7 +20,7 @@ class CreateApprenantsTable extends Migration
             $table->text('adresse');
             $table->string('telephone');
             $table->string('photo')->nullable();
-            $table->string('cardID')->nullable();
+            $table->string('cardID')->nullable()->unique();
             $table->string('matricule')->unique();
             $table->boolean('archivé')->default(false);
             $table->foreignId('cohorte_id')->constrained('cohortes');

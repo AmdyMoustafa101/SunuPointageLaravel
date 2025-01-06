@@ -6,14 +6,11 @@ use App\Http\Controllers\ApprenantController;
 use App\Http\Controllers\EmployeController;
 use App\Http\Controllers\CohorteController;
 use App\Http\Controllers\DepartementController;
+use App\Http\Controllers\PresenceController;
+use App\Http\Controllers\UserCardController;
 
 
 
-// Route::get('/user', function (Request $request) {
-//     return $request->user();
-// })->middleware('auth:sanctum');
-
-// Exemple de route API pour un contrôleur
 
 
 Route::apiResource('departements', DepartementController::class);
@@ -29,12 +26,27 @@ Route::apiResource('apprenants', ApprenantController::class);
 
 Route::post('login', [EmployeController::class, 'login']);
 
+Route::get('App-cohorte', [ApprenantController::class, 'getCounts']);
+
+Route::put('change-password/{email}', [EmployeController::class, 'changePassword']);
+
+Route::get('Emp-dept', [EmployeController::class, 'getCounts']);
+
 Route::post('/logout', [EmployeController::class, 'logout'])->middleware('auth:api');
 
+Route::middleware('auth:api')->post('/enregistrer-pointage', [EmployeController::class, 'enregistrerPointage']);
+Route::get('/horaires', [PresenceController::class, 'horaires']);
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
-});
+Route::get('/employesC', [UserCardController::class, 'listEmployes']);
+Route::get('/apprenantsC', [UserCardController::class, 'listApprenants']);
+Route::post('/assign-card', [UserCardController::class, 'assignCard']);
+Route::post('/unassign-card', [UserCardController::class, 'unassignCard']);
+
+Route::get('/get-user-by-card/{uid}', [UserCardController::class, 'getUserByCard']);
+
+
+
+
 
 
 
