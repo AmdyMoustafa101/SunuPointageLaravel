@@ -30,6 +30,7 @@ Route::get('App-cohorte', [ApprenantController::class, 'getCounts']);
 
 Route::put('change-password/{email}', [EmployeController::class, 'changePassword']);
 
+
 Route::get('Emp-dept', [EmployeController::class, 'getCounts']);
 
 Route::post('/logout', [EmployeController::class, 'logout'])->middleware('auth:api');
