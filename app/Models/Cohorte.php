@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Cohorte extends Model
 {
@@ -16,7 +16,8 @@ class Cohorte extends Model
         'nom',
         'description',
         'horaires',
-        'annee'
+        'annee',
+        'status'
     ];
 
     // Cast de la colonne horaires en tableau JSON

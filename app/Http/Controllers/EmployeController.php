@@ -2,15 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Cohorte;
 use App\Models\Employe;
+use App\Models\Apprenant;
 use App\Models\Departement;
-use Tymon\JWTAuth\Facades\JWTAuth;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Http\Request;
+use Tymon\JWTAuth\Facades\JWTAuth;
 use Illuminate\Support\Facades\Log; // Ajoutez cette ligne
-use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash; // Ajoutez cette ligne
+use Illuminate\Support\Facades\Http;   // Ajoutez cette ligne
 
 
 class EmployeController extends Controller
@@ -288,7 +290,7 @@ public function getCounts()
 
 public function sendLogToNode(array $logData)
 {
-    $nodeUrl = env('NODE_API_URL', 'http://localhost:3002/api/log-access');
+    $nodeUrl = env('NODE_API_URL', 'http://localhost:3005/api/log-access');
 
     try {
         $response = Http::post($nodeUrl, $logData);
@@ -345,6 +347,20 @@ public function enregistrerPointage(Request $request)
     }
 }
 
+public function getStatistics()
+{
+    $totalEmployees = Employe::count(); // Nombre total d'employés
+    $totalLearners = Apprenant::count(); // Ajouter le modèle Apprenant
+    $totalDepartments = Departement::count(); // Nombre total de départements
+    $totalCohorts = Cohorte::count(); // Ajouter le modèle Cohorte
+
+    return response()->json([
+        'totalEmployees' => $totalEmployees,
+        'totalLearners' => $totalLearners,
+        'totalDepartments' => $totalDepartments,
+        'totalCohorts' => $totalCohorts,
+    ], 200);
+}
 
 
 }

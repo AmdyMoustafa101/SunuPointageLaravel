@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Cohorte;
+use App\Models\Apprenant;
 use Illuminate\Http\Request;
+
 
 class CohorteController extends Controller
 {
@@ -56,31 +58,36 @@ class CohorteController extends Controller
     /**
      * Mettre à jour une cohorte existante.
      */
-    public function update(Request $request, $id)
-    {
-        $cohorte = Cohorte::find($id);
+    /**
+ * Mettre à jour une cohorte existante.
+ */
+public function update(Request $request, $id)
+{
+    $cohorte = Cohorte::find($id);
 
-        if (!$cohorte) {
-            return response()->json(['message' => 'Cohorte non trouvée'], 404);
-        }
+    if (!$cohorte) {
+        return response()->json(['message' => 'Cohorte non trouvée'], 404);
+    }
 
-        $request->validate([
-            'nom' => 'sometimes|required|string|max:255|unique:cohortes,nom,{$id}',
-            'description' => 'required|string',
-            'horaires' => 'sometimes|array',
-            'horaires.*.jours' => 'sometimes|required|array',
-            'horaires.*.jours.*' => 'in:lundi,mardi,mercredi,jeudi,vendredi,samedi',
-            'horaires.*.heure_debut' => 'sometimes|required|date_format:H:i',
-            'horaires.*.heure_fin' => 'sometimes|required|date_format:H:i',
-            'horaires.*.heure_fin' => 'sometimes|required|after:horaires.*.heure_debut',
-            'annee' => 'sometimes|required|digits:4|integer|min:2000|max:2100',
-        ]);
+    // Valider les données de la requête entrante
+    $data = $request->validate([
+        'nom' => 'sometimes|required|string|max:255|unique:cohortes,nom,' . $id,
+        'description' => 'sometimes|required|string',
+        'horaires' => 'sometimes|array',
+        'horaires.*.jours' => 'sometimes|required|array',
+        'horaires.*.jours.*' => 'in:lundi,mardi,mercredi,jeudi,vendredi,samedi',
+        'horaires.*.heure_debut' => 'sometimes|required|date_format:H:i',
+        'horaires.*.heure_fin' => 'sometimes|required|date_format:H:i|after:horaires.*.heure_debut',
+        'annee' => 'sometimes|required|digits:4|integer|min:2000|max:2100',
+    ]);
 
-        // Préparer les horaires formatés
-        $horaires = [];
-        if (isset($data['horaires'])) {
-            foreach ($data['horaires'] as $horaire) {
-                foreach ($horaire['jours'] as $jour) {
+    // Préparer les horaires formatés
+    $horaires = [];
+    if (isset($data['horaires'])) {
+        foreach ($data['horaires'] as $horaire) {
+            foreach ($horaire['jours'] as $jour) {
+                // Vérifier que les heures sont définies
+                if (isset($horaire['heure_debut']) && isset($horaire['heure_fin'])) {
                     $horaires[$jour] = [
                         'heure_debut' => $horaire['heure_debut'],
                         'heure_fin' => $horaire['heure_fin']
@@ -88,14 +95,18 @@ class CohorteController extends Controller
                 }
             }
         }
-
-        $cohorte->update(['nom' => $data['nom'] ?? $cohorte->nom,
-            'description' => $data['description'] ?? $cohorte->description,
-            'horaires' => $horaires,
-            'annee' => $data['annee']?? $cohorte->annee,]);
-
-        return response()->json($cohorte, 200);
     }
+
+    // Mise à jour des informations de la cohorte
+    $cohorte->update([
+        'nom' => $data['nom'] ?? $cohorte->nom,
+        'description' => $data['description'] ?? $cohorte->description,
+        'horaires' => $horaires,
+        'annee' => $data['annee'] ?? $cohorte->annee,
+    ]);
+
+    return response()->json($cohorte, 200);
+}
 
     /**
      * Supprimer une cohorte.
@@ -112,4 +123,33 @@ class CohorteController extends Controller
 
         return response()->json(['message' => 'Cohorte supprimée avec succès'], 200);
     }
+
+     /**
+     * Archiver une cohorte.
+     */
+    public function archive($id)
+    {
+        $cohorte = Cohorte::find($id);
+    
+        if (!$cohorte) {
+            return response()->json(['message' => 'Cohorte non trouvée'], 404);
+        }
+    
+        // Vérifiez s'il y a des apprenants associés à la cohorte
+        if ($cohorte->apprenants()->count() > 0) {
+            return response()->json(['message' => 'Impossible d\'archiver la cohorte, il y a des apprenants associés.'], 400);
+        }
+    
+        // Mettre à jour le statut de la cohorte à "archivée"
+        $cohorte->update(['status' => 'archived']);
+    
+        return response()->json(['message' => 'Cohorte archivée avec succès'], 200);
+    }
+
+    public function getApprenantsByCohorte($cohorteId)
+{
+    // Récupérer les apprenants associés à la cohorte
+    $apprenants = Apprenant::where('cohorte_id', $cohorteId)->get();
+    return response()->json($apprenants);
+}
 }
