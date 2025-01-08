@@ -12,16 +12,16 @@ class CreateCohortesTable extends Migration
      * @return void
      */
     public function up()
-    {
-        Schema::create('cohortes', function (Blueprint $table) {
-            $table->id();
-            $table->string('nom')->unique();
-            $table->text('description');
-            $table->json('horaires'); // Stockage des horaires (JSON pour les jours de la semaine)
-            $table->year('annee');    // Année de la cohorte
-            $table->timestamps();
-        });
-    }
+{
+    Schema::create('cohortes', function (Blueprint $table) {
+        $table->id();
+        $table->string('nom')->unique();
+        $table->text('description');
+        $table->json('horaires'); // Stockage des horaires (JSON pour les jours de la semaine)
+        $table->string('annee'); // Année académique au format YYYY-YYYY
+        $table->timestamps();
+    });
+}
 
     /**
      * Reverse the migrations.
