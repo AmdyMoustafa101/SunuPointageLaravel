@@ -62,4 +62,12 @@ class Employe extends Authenticatable implements JWTSubject
          return [];
      }
 
+     public function getPhotoAttribute($value)
+{
+    if ($value) {
+        return asset('storage/' . $value);
+    }
+    return null;
+}
+
 }
