@@ -49,6 +49,7 @@ Route::delete('/apprenants/{id}', [ApprenantController::class, 'destroy']);
 Route::post('/apprenants/delete-multiple', [ApprenantController::class, 'destroyMultiple']);
 Route::delete('/apprenants', [ApprenantController::class, 'destroyMultiple']);
 Route::post('/apprenants/{id}/archive', [ApprenantController::class, 'archive']);
+
 Route::post('/apprenants/archive', [ApprenantController::class, 'archiveMultiple']);
 
 // Route::get('/cohorte/{id}/apprenants', [ApprenantController::class, 'getApprenantsByCohorte']);
