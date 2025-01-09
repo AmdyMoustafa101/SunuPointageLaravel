@@ -20,6 +20,21 @@ class ApprenantController extends Controller
         return response()->json($apprenants, 200);
     }
 
+    // Afficher la liste des apprenants actifs
+   // Afficher la liste des apprenants actifs par cohorte
+   public function apprenantsActifsByCohorte($cohorteId, Request $request)
+   {
+       $apprenants = Apprenant::where('cohorte_id', $cohorteId)->where('archivé', false)->get();
+       return response()->json($apprenants, 200);
+   }
+
+   // Afficher la liste des apprenants archivés par cohorte
+   public function apprenantsArchivesByCohorte($cohorteId, Request $request)
+   {
+       $apprenants = Apprenant::where('cohorte_id', $cohorteId)->where('archivé', true)->get();
+       return response()->json($apprenants, 200);
+   }
+
     // Créer un nouvel apprenant
     public function store(Request $request)
     {
@@ -176,6 +191,30 @@ public function archiveMultiple(Request $request) {
     }
 
     return response()->json(['message' => 'Apprenants archivés avec succès.'], 200);
+}
+
+// Désarchiver un apprenant spécifique
+public function desarchiver($id) {
+    $apprenant = Apprenant::find($id);
+    if ($apprenant) {
+        $apprenant->archivé = false;
+        $apprenant->save();
+        return response()->json(['message' => 'Apprenant désarchivé avec succès.'], 200);
+    }
+    return response()->json(['message' => 'Apprenant non trouvé.'], 404);
+}
+
+// Désarchiver plusieurs apprenants
+public function desarchiverMultiple(Request $request) {
+    $ids = $request->input('ids');
+    $apprenants = Apprenant::whereIn('id', $ids)->get();
+    
+    foreach ($apprenants as $apprenant) {
+        $apprenant->archivé = false;
+        $apprenant->save();
+    }
+
+    return response()->json(['message' => 'Apprenants désarchivés avec succès.'], 200);
 }
 
 }

@@ -52,6 +52,10 @@ Route::post('/apprenants/{id}/archive', [ApprenantController::class, 'archive'])
 
 Route::post('/apprenants/archive', [ApprenantController::class, 'archiveMultiple']);
 
+Route::post('/apprenants/{id}/desarchive', [ApprenantController::class, 'desarchiver']);
+
+Route::post('/apprenants/desarchive', [ApprenantController::class, 'desarchiverMultiple']);
+
 // Route::get('/cohorte/{id}/apprenants', [ApprenantController::class, 'getApprenantsByCohorte']);
 Route::get('/cohortes/{id}/apprenant', [ApprenantController::class, 'getApprenantsByCohorte']);
 
@@ -62,6 +66,40 @@ Route::post('/assign-card', [UserCardController::class, 'assignCard']);
 Route::post('/unassign-card', [UserCardController::class, 'unassignCard']);
 
 Route::get('/get-user-by-card/{uid}', [UserCardController::class, 'getUserByCard']);
+
+// Routes pour les apprenants actifs et archivés par cohorte
+Route::get('/cohortes/{id}/apprenants-actifs', [ApprenantController::class, 'apprenantsActifsByCohorte']);
+Route::get('/cohortes/{id}/apprenants-archives', [ApprenantController::class, 'apprenantsArchivesByCohorte']);
+
+Route::post('/cohortes/archive', [CohorteController::class, 'archiveMultiple']);
+
+// Route pour archiver une cohorte
+Route::post('/cohortes/{id}/archive', [CohorteController::class, 'archive']);
+
+// Route pour archiver plusieurs cohortes
+Route::post('/cohortes/archive-multiple', [CohorteController::class, 'archiveMultiple']);
+
+// Route pour obtenir la liste des cohortes
+Route::get('/cohortes', [CohorteController::class, 'index']);
+
+Route::get('/departement/{id}', [DepartementController::class, 'getDepartementById']);
+
+Route::get('/departements', [DepartementController::class, 'index']);
+Route::patch('departements/{id}/archive', [DepartementController::class, 'archive']);
+
+
+
+Route::get('/employes/departement/{departementId}', [EmployeController::class, 'getEmployeesByDepartement']);
+Route::get('employes/{id}', [EmployeController::class, 'getEmployeById']);
+Route::post('/employes', [EmployeController::class, 'store']);
+Route::prefix('employes')->group(function () {
+    Route::post('archive/{id}', [EmployeController::class, 'archive']);
+    Route::post('unarchive/{id}', [EmployeController::class, 'unarchive']);
+    Route::post('archive-multiple', [EmployeController::class, 'archiveMultiple']);
+    Route::post('unarchive-multiple', [EmployeController::class, 'unarchiveMultiple']);
+    Route::post('block/{id}', [EmployeController::class, 'block']);
+});
+
 
 
 

@@ -29,6 +29,7 @@ class DepartementController extends Controller
             'horaires.*.jours' => 'required|array',  // Validation pour les jours
             'horaires.*.heure_debut' => 'required|date_format:H:i',
             'horaires.*.heure_fin' => 'required|date_format:H:i',
+            'archive' => 'boolean',
         ]);
 
         // Création du département
@@ -36,11 +37,11 @@ class DepartementController extends Controller
             'nom' => $data['nom'],
             'description' => $data['description'],
             'horaires' => $data['horaires'],
+            'archive' => $data['archive'] ?? false,
         ]);
 
         return response()->json($departement, 201);
     }
-
 
     /**
      * Display the specified resource.
@@ -49,6 +50,12 @@ class DepartementController extends Controller
     {
         $departement = Departement::findOrFail($id);
         return response()->json($departement, 200);
+    }
+
+    public function getDepartementById(string $id)
+    {
+        // Vous pouvez réutiliser la logique de la méthode show
+        return $this->show($id);
     }
 
     /**
@@ -67,7 +74,7 @@ class DepartementController extends Controller
             'horaires.*.jours.*' => 'in:lundi,mardi,mercredi,jeudi,vendredi,samedi',
             'horaires.*.heure_debut' => 'sometimes|required|date_format:H:i',
             'horaires.*.heure_fin' => 'sometimes|required|date_format:H:i',
-            'horaires.*.heure_fin' => 'sometimes|required|after:horaires.*.heure_debut',
+            'archive' => 'sometimes|boolean',
         ]);
 
         // Préparer les horaires formatés
@@ -88,6 +95,7 @@ class DepartementController extends Controller
             'nom' => $data['nom'] ?? $departement->nom,
             'description' => $data['description'] ?? $departement->description,
             'horaires' => $horaires,
+            'archive' => $data['archive'] ?? $departement->archive,
         ]);
 
         return response()->json($departement, 200);
@@ -101,5 +109,20 @@ class DepartementController extends Controller
         Departement::destroy($id);
         return response()->json(['message' => 'Département supprimé avec succès'], 200);
     }
-}
 
+    public function archive(Request $request, string $id)
+    {
+        // Trouver le département
+        $departement = Departement::findOrFail($id);
+        
+        // Inverser l'état d'archivage
+        $departement->archive = !$departement->archive;
+        $departement->save();
+    
+        // Retourner une réponse JSON claire
+        return response()->json([
+            'message' => 'État d\'archivage mis à jour avec succès',
+            'departement' => $departement
+        ], 200);
+    }
+}

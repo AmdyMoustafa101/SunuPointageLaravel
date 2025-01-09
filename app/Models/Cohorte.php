@@ -24,4 +24,9 @@ class Cohorte extends Model
     protected $casts = [
         'horaires' => 'array',
     ];
+
+    public function apprenants()
+    {
+        return $this->hasMany(Apprenant::class);
+    }
 }

@@ -33,8 +33,8 @@ class EmployeController extends Controller
     {
         // Récupérer le rôle
         $role = $request->input('role');
-
-        // Validation conditionnelle
+    
+        // Définir les règles de validation conditionnelle
         $rules = [
             'nom' => 'required|string|max:255',
             'prenom' => 'required|string|max:255',
@@ -43,7 +43,8 @@ class EmployeController extends Controller
             'photo' => 'required|image|mimes:jpeg,png,jpg|max:2048',
             'role' => 'required|in:simple,vigile,administrateur',
         ];
-
+    
+        // Ajouter des règles spécifiques basées sur le rôle
         if ($role === 'vigile') {
             $rules['fonction'] = 'nullable|string|in:vigile'; // Fonction fixée à "vigile"
             $rules['departement_id'] = 'nullable'; // Aucun département requis
@@ -51,36 +52,58 @@ class EmployeController extends Controller
             $rules['fonction'] = 'required|string|max:255'; // Fonction requise pour les autres rôles
             $rules['departement_id'] = 'required|exists:departements,id';
         }
-
+    
         if (in_array($role, ['administrateur', 'vigile'])) {
             $rules['email'] = 'required|email|unique:employes,email';
             $rules['password'] = 'required|string|min:8';
         }
-
-        $validatedData = $request->validate($rules);
-
-        // Gestion des champs spécifiques
+    
+        // Log les données reçues
+        Log::info('Données reçues : ', $request->all());
+    
+        // Valider les données de la requête
+        try {
+            $validatedData = $request->validate($rules);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // Log les erreurs de validation
+            Log::error('Validation Error', $e->errors());
+            return response()->json(['error' => 'Validation Error', 'messages' => $e->errors()], 422);
+        }
+    
+        // Gestion des champs spécifiques pour le rôle "vigile"
         if ($role === 'vigile') {
             $validatedData['fonction'] = 'vigile'; // Attribuer "vigile" comme fonction
             $validatedData['departement_id'] = null; // Aucun département
         }
-
+    
         $validatedData['cardID'] = null; // Initialement NULL
-
-        // Upload de l'image
+    
+        // Upload de l'image et stockage du chemin
         if ($request->hasFile('photo')) {
-            $path = $request->file('photo')->store('employe_photos', 'public');
-            $validatedData['photo'] = $path;
+            try {
+                $path = $request->file('photo')->store('employe_photos', 'public');
+                $validatedData['photo'] = $path;
+            } catch (\Exception $e) {
+                return response()->json(['error' => 'File Upload Error', 'message' => $e->getMessage()], 500);
+            }
         }
-
+    
         // Génération du matricule
         $validatedData['matricule'] = $this->generateMatricule($validatedData['role'], $validatedData['fonction']);
-
-
+    
+        // Hachage du mot de passe si présent
+        if (isset($validatedData['password'])) {
+            $validatedData['password'] = Hash::make($validatedData['password']);
+        }
+    
         // Création de l'employé
-        $employe = Employe::create($validatedData);
-
-        return response()->json($employe, 201);
+        try {
+            $employe = Employe::create($validatedData);
+            return response()->json(['success' => true, 'message' => 'Employé créé avec succès', 'employe' => $employe], 201);
+        } catch (\Exception $e) {
+            // Gérer les erreurs de création
+            return response()->json(['error' => 'Erreur lors de la création de l\'employé', 'message' => $e->getMessage()], 500);
+        }
     }
 
     private function generateMatricule($role, $fonction)
@@ -361,6 +384,91 @@ public function getStatistics()
         'totalCohorts' => $totalCohorts,
     ], 200);
 }
+
+public function getEmployeesByDepartement($departementId)
+    {
+        $employes = Employe::where('departement_id', $departementId)->get();
+        return response()->json($employes, 200);
+    }
+
+    public function archive($id)
+    {
+        $employe = Employe::findOrFail($id);
+        $employe->archived = true;
+        $employe->save();
+
+        return response()->json(['message' => 'Employé archivé avec succès'], 200);
+    }
+
+    /**
+     * Désarchiver un employé.
+     */
+    public function unarchive($id)
+    {
+        $employe = Employe::findOrFail($id);
+        $employe->archived = false;
+        $employe->save();
+
+        return response()->json(['message' => 'Employé désarchivé avec succès'], 200);
+    }
+
+    /**
+     * Archiver plusieurs employés.
+     */
+    public function archiveMultiple(Request $request)
+    {
+        $ids = $request->input('ids');
+        Employe::whereIn('id', $ids)->update(['archived' => true]);
+
+        return response()->json(['message' => 'Employés archivés avec succès'], 200);
+    }
+
+    /**
+     * Désarchiver plusieurs employés.
+     */
+    public function unarchiveMultiple(Request $request)
+    {
+        $ids = $request->input('ids');
+        Employe::whereIn('id', $ids)->update(['archived' => false]);
+
+        return response()->json(['message' => 'Employés désarchivés avec succès'], 200);
+    }
+
+    /**
+     * Bloquer un employé.
+     */
+    public function block($id)
+    {
+        $employe = Employe::findOrFail($id);
+        $employe->blocked = true;
+        $employe->save();
+
+        return response()->json(['message' => 'Employé bloqué avec succès'], 200);
+    }
+
+    public function getEmployeById($id)
+{
+    // Récupérer l'employé avec ses détails et le département associé
+    $employe = Employe::with('departement')->findOrFail($id);
+
+    // Retourner les détails de l'employé sous forme de réponse JSON
+    return response()->json([
+        'id' => $employe->id,
+        'nom' => $employe->nom,
+        'prenom' => $employe->prenom,
+        'adresse' => $employe->adresse,
+        'telephone' => $employe->telephone,
+        'email' => $employe->email,
+        'role' => $employe->role,
+        'fonction' => $employe->fonction,
+        'departement' => $employe->departement, // Inclure les détails du département
+        'photo' => $employe->photo,
+        'matricule' => $employe->matricule,
+        'created_at' => $employe->created_at,
+        'updated_at' => $employe->updated_at,
+    ], 200);
+}
+
 
 
 }
