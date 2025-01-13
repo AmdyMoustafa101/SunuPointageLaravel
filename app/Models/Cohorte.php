@@ -17,12 +17,14 @@ class Cohorte extends Model
         'description',
         'horaires',
         'annee',
-        'status'
+        'status',
+        'archive'  // Enlever => 'boolean'
     ];
 
-    // Cast de la colonne horaires en tableau JSON
+    // Cast des colonnes
     protected $casts = [
         'horaires' => 'array',
+        'archive' => 'boolean'  // Déplacer le cast ici
     ];
 
     public function apprenants()

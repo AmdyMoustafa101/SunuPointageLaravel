@@ -94,7 +94,7 @@ class DepartementController extends Controller
         $departement->update([
             'nom' => $data['nom'] ?? $departement->nom,
             'description' => $data['description'] ?? $departement->description,
-            'horaires' => $horaires,
+            'horaires' => $horaires ? json_encode($horaires) : $departement->horaires,
             'archive' => $data['archive'] ?? $departement->archive,
         ]);
 
@@ -110,19 +110,104 @@ class DepartementController extends Controller
         return response()->json(['message' => 'Département supprimé avec succès'], 200);
     }
 
-    public function archive(Request $request, string $id)
+    public function archive(string $id)
     {
         // Trouver le département
         $departement = Departement::findOrFail($id);
         
-        // Inverser l'état d'archivage
-        $departement->archive = !$departement->archive;
-        $departement->save();
-    
+        // Définir l'état d'archivage à true
+        if (!$departement->archive) {
+            $departement->archive = true;
+            $departement->save();
+        }
+        
         // Retourner une réponse JSON claire
         return response()->json([
-            'message' => 'État d\'archivage mis à jour avec succès',
+            'message' => $departement->archive ? 'Département archivé avec succès' : 'Département est déjà archivé',
             'departement' => $departement
         ], 200);
+    }
+
+    public function desarchiver(string $id)
+    {
+        // Trouver le département
+        $departement = Departement::findOrFail($id);
+        
+        // Définir l'état d'archivage à false
+        if ($departement->archive) {
+            $departement->archive = false;
+            $departement->save();
+        }
+        
+        // Retourner une réponse JSON claire
+        return response()->json([
+            'message' => !$departement->archive ? 'Département désarchivé avec succès' : 'Département est déjà désarchivé',
+            'departement' => $departement
+        ], 200);
+    }
+
+    public function getArchivedDepartements()
+    {
+        $departements = Departement::where('archive', true)->get();
+        return response()->json($departements, 200);
+    }
+
+    public function getDepartementsCount()
+    {
+        $totalDepartements = Departement::count();
+        $totalArchivedDepartements = Departement::where('archive', true)->count();
+        $totalActiveDepartements = Departement::where('archive', false)->count();
+
+        return response()->json([
+            'total' => $totalDepartements,
+            'archived' => $totalArchivedDepartements,
+            'active' => $totalActiveDepartements,
+        ], 200);
+    }
+
+    public function getDepartementsByHoraire(Request $request)
+    {
+        $request->validate([
+            'jour' => 'required|string|in:lundi,mardi,mercredi,jeudi,vendredi,samedi,dimanche',
+            'heure_debut' => 'required|date_format:H:i',
+            'heure_fin' => 'required|date_format:H:i',
+        ]);
+
+        $jour = $request->input('jour');
+        $heureDebut = $request->input('heure_debut');
+        $heureFin = $request->input('heure_fin');
+
+        $departements = Departement::where('archive', false)
+            ->whereJsonContains('horaires->' . $jour, [
+                'heure_debut' => $heureDebut,
+                'heure_fin' => $heureFin
+            ])
+            ->get();
+
+        return response()->json($departements, 200);
+    }
+
+    public function archiveMultiple(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:departements,id',
+        ]);
+
+        Departement::whereIn('id', $request->ids)->update(['archive' => true]);
+
+        return response()->json(['message' => 'Départements archivés avec succès'], 200);
+    }
+
+    public function unarchiveMultiple(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:departements,id',
+        ]);
+
+        Departement::whereIn('id', $request->ids)->update(['archive' => false]);
+
+        return response()->json(['message' => 'Départements désarchivés avec succès'], 200);
     }
 }

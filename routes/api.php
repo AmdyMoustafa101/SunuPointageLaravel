@@ -8,6 +8,7 @@ use App\Http\Controllers\PresenceController;
 use App\Http\Controllers\UserCardController;
 use App\Http\Controllers\ApprenantController;
 use App\Http\Controllers\DepartementController;
+use App\Http\Controllers\LeaveRequestController;
 
 
 
@@ -25,6 +26,9 @@ Route::apiResource('employes', EmployeController::class);
 
 
 Route::apiResource('apprenants', ApprenantController::class);
+
+Route::apiResource('apprenants', ApprenantController::class);
+
 
 Route::post('login', [EmployeController::class, 'login']);
 
@@ -48,6 +52,10 @@ Route::get('/apprenantsC', [UserCardController::class, 'listApprenants']);
 Route::delete('/apprenants/{id}', [ApprenantController::class, 'destroy']);
 Route::post('/apprenants/delete-multiple', [ApprenantController::class, 'destroyMultiple']);
 Route::delete('/apprenants', [ApprenantController::class, 'destroyMultiple']);
+
+Route::get('apprenants/counts', [ApprenantController::class, 'getCounts']);
+
+
 Route::post('/apprenants/{id}/archive', [ApprenantController::class, 'archive']);
 
 Route::post('/apprenants/archive', [ApprenantController::class, 'archiveMultiple']);
@@ -76,8 +84,13 @@ Route::post('/cohortes/archive', [CohorteController::class, 'archiveMultiple']);
 // Route pour archiver une cohorte
 Route::post('/cohortes/{id}/archive', [CohorteController::class, 'archive']);
 
+Route::post('/cohortes/{id}/unarchive', [CohorteController::class, 'unarchive']);
+
+
 // Route pour archiver plusieurs cohortes
 Route::post('/cohortes/archive-multiple', [CohorteController::class, 'archiveMultiple']);
+
+Route::post('cohortes/unarchive-multiple', [CohorteController::class, 'unarchiveMultiple']);
 
 // Route pour obtenir la liste des cohortes
 Route::get('/cohortes', [CohorteController::class, 'index']);
@@ -87,11 +100,31 @@ Route::get('/departement/{id}', [DepartementController::class, 'getDepartementBy
 Route::get('/departements', [DepartementController::class, 'index']);
 Route::patch('departements/{id}/archive', [DepartementController::class, 'archive']);
 
+// Route pour désarchiver un département
+Route::post('departements/{id}/desarchiver', [DepartementController::class, 'desarchiver']);
+
+// Route pour récupérer les départements archivés
+Route::get('departements/archived', [DepartementController::class, 'getArchivedDepartements']);
+
+// Route pour récupérer le nombre total de départements
+Route::get('departements/count', [DepartementController::class, 'getDepartementsCount']);
+
+// Route pour récupérer les départements par horaire
+Route::get('departements/by-horaire', [DepartementController::class, 'getDepartementsByHoraire']);
+
+// Route pour archiver plusieurs départements
+Route::patch('/departements/archive', [DepartementController::class, 'archiveMultiple']);
+
+// Route pour désarchiver plusieurs départements
+Route::patch('/departements/unarchive', [DepartementController::class, 'unarchiveMultiple']);
+
+
 
 
 Route::get('/employes/departement/{departementId}', [EmployeController::class, 'getEmployeesByDepartement']);
 Route::get('employes/{id}', [EmployeController::class, 'getEmployeById']);
 Route::post('/employes', [EmployeController::class, 'store']);
+Route::post('employes/import-csv', [EmployeController::class, 'importCsv']);
 Route::prefix('employes')->group(function () {
     Route::post('archive/{id}', [EmployeController::class, 'archive']);
     Route::post('unarchive/{id}', [EmployeController::class, 'unarchive']);
@@ -99,6 +132,24 @@ Route::prefix('employes')->group(function () {
     Route::post('unarchive-multiple', [EmployeController::class, 'unarchiveMultiple']);
     Route::post('block/{id}', [EmployeController::class, 'block']);
 });
+
+
+
+Route::apiResource('leave-requests', LeaveRequestController::class);
+Route::get('leave-requests/pending', [LeaveRequestController::class, 'getPendingLeave']);
+
+
+
+Route::post('cohortes/{id}/unarchive', [CohorteController::class, 'unarchive']);
+
+
+Route::get('/apprenants/actifs', [ApprenantController::class, 'apprenantsActifs']);
+
+Route::get('/apprenants/archives', [ApprenantController::class, 'apprenantsArchives']);
+
+
+
+
 
 
 

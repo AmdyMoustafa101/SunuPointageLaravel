@@ -5,7 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Cohorte;
 use App\Models\Apprenant;
 use Illuminate\Http\Request;
+use App\Exports\ApprenantsExport;
+use Maatwebsite\Excel\Facades\Excel;    
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 
 class ApprenantController extends Controller
 {
@@ -15,12 +18,11 @@ class ApprenantController extends Controller
         $page = (int) $request->query('page', 1); // Page actuelle
         $limit = (int) $request->query('limit', 8); // Nombre d'éléments par page
 
-        $apprenants = Apprenant::where('archivé', false)->get();
+        $apprenants = Apprenant::where( 'archivé', false)->get();
         
         return response()->json($apprenants, 200);
     }
 
-    // Afficher la liste des apprenants actifs
    // Afficher la liste des apprenants actifs par cohorte
    public function apprenantsActifsByCohorte($cohorteId, Request $request)
    {
@@ -32,6 +34,21 @@ class ApprenantController extends Controller
    public function apprenantsArchivesByCohorte($cohorteId, Request $request)
    {
        $apprenants = Apprenant::where('cohorte_id', $cohorteId)->where('archivé', true)->get();
+       return response()->json($apprenants, 200);
+   }
+
+
+   // Afficher la liste des apprenants actifs
+   public function apprenantsActifs(Request $request)
+   {
+       $apprenants = Apprenant::where('archivé', false)->get();
+       return response()->json($apprenants, 200);
+   }
+
+   // Afficher la liste des apprenants archivés
+   public function apprenantsArchives(Request $request)
+   {
+       $apprenants = Apprenant::where('archivé', true)->get();
        return response()->json($apprenants, 200);
    }
 
@@ -215,6 +232,136 @@ public function desarchiverMultiple(Request $request) {
     }
 
     return response()->json(['message' => 'Apprenants désarchivés avec succès.'], 200);
+}
+
+
+
+
+
+
+
+
+
+// Fonctions de Amdy
+
+ // Exporter les apprenants en CSV
+ public function exportCSV()
+ {
+     $apprenants = Apprenant::with('cohorte')->get();
+     $csvData = [];
+ 
+     foreach ($apprenants as $apprenant) {
+         $csvData[] = [
+             'Nom' => $apprenant->nom,
+             'Prénom' => $apprenant->prenom,
+             'Adresse' => $apprenant->adresse,
+             'Matricule' => $apprenant->matricule,
+             'Téléphone' => $apprenant->telephone,
+             'Cohorte' => $apprenant->cohorte ? $apprenant->cohorte->nom : '',
+         ];
+     }
+ 
+     $csvFileName = 'apprenants.csv';
+     $headers = [
+         'Content-Type' => 'text/csv',
+         'Content-Disposition' => "attachment; filename=\"$csvFileName\"",
+     ];
+ 
+     return response()->stream(function () use ($csvData) {
+         $output = fopen('php://output', 'w');
+         fputcsv($output, array_keys($csvData[0])); // Ajouter les en-têtes du CSV
+ 
+         foreach ($csvData as $row) {
+             fputcsv($output, $row);
+         }
+ 
+         fclose($output);
+     }, 200, $headers);
+ }
+
+
+  // Exporter les apprenants en Excel
+  public function exportExcel()
+  {
+      return Excel::download(new ApprenantsExport, 'apprenants.xlsx');
+  }
+
+
+  public function importCsv(Request $request)
+{
+    $validator = Validator::make($request->all(), [
+        'file' => 'required|file|mimes:csv,txt',
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json([
+            'message' => 'Erreur de validation des données.',
+            'errors' => $validator->errors()
+        ], 422);
+    }
+
+    $file = $request->file('file');
+    $handle = fopen($file->getRealPath(), 'r');
+    $errors = [];
+    $imported = 0;
+
+    if ($handle) {
+        $header = true;
+        while (($row = fgetcsv($handle, 1000, ',')) !== false) {
+            if ($header) {
+                $header = false; // Ignore la première ligne (entêtes)
+                continue;
+            }
+
+            if (count($row) < 5) { // Assurez-vous que toutes les colonnes obligatoires sont présentes
+                //$errors[] = "Une ligne ne contient pas assez de colonnes : " . implode(',', $row);
+                continue;
+            }
+
+            [$nom, $prenom, $adresse, $telephone, $cohorte_id] = $row;
+
+            try {
+                // Vérification de l'unicité du téléphone
+                if (!empty($telephone) && Apprenant::where('telephone', $telephone)->exists()) {
+                    $errors[] = "Le numéro de téléphone '{$telephone}' est déjà utilisé.";
+                    continue;
+                }
+
+                // Vérification de l'existence de la cohorte
+                $cohorte = Cohorte::find($cohorte_id);
+                if (!$cohorte) {
+                    $errors[] = "La cohorte avec l'ID '{$cohorte_id}' n'existe pas.";
+                    continue;
+                }
+
+                // Génération du matricule (se fait automatiquement via le modèle)
+
+                // Création de l'apprenant
+                Apprenant::create([
+                    'nom' => $nom,
+                    'prenom' => $prenom,
+                    'adresse' => $adresse,
+                    'telephone' => $telephone,
+                    'photo' => null, // La photo n'est pas gérée ici
+                    'cohorte_id' => $cohorte_id,
+                    'archivé' => false,
+                ]);
+                $imported++;
+            } catch (\Exception $e) {
+                $errors[] = "Erreur lors de l'importation de '{$nom} {$prenom}': " . $e->getMessage();
+            }
+        }
+        fclose($handle);
+    }
+
+    if (!empty($errors)) {
+        return response()->json([
+            'message' => "Importation terminée avec des erreurs : {$imported} apprenants importés.",
+            'errors' => $errors
+        ], 422);
+    }
+
+    return response()->json(['message' => "Importation terminée : {$imported} apprenants importés."]);
 }
 
 }

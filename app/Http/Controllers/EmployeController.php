@@ -9,10 +9,12 @@ use App\Models\Departement;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Tymon\JWTAuth\Facades\JWTAuth;
-use Illuminate\Support\Facades\Log; // Ajoutez cette ligne
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash; // Ajoutez cette ligne
-use Illuminate\Support\Facades\Http;   // Ajoutez cette ligne
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage; // Ajoutez cette ligne
+use Illuminate\Support\Facades\Validator;   // Ajoutez cette ligne
 
 
 class EmployeController extends Controller
@@ -42,6 +44,7 @@ class EmployeController extends Controller
             'telephone' => 'required|string|max:20',
             'photo' => 'required|image|mimes:jpeg,png,jpg|max:2048',
             'role' => 'required|in:simple,vigile,administrateur',
+            'email' => 'required|email|unique:employes,email',
         ];
     
         // Ajouter des règles spécifiques basées sur le rôle
@@ -467,6 +470,56 @@ public function getEmployeesByDepartement($departementId)
         'created_at' => $employe->created_at,
         'updated_at' => $employe->updated_at,
     ], 200);
+}
+
+
+
+
+public function importCsv(Request $request)
+{
+    // Validation du fichier CSV
+    $request->validate([
+        'file' => 'required|mimes:csv,txt|max:2048',
+    ]);
+
+    // Stocker le fichier CSV
+    $path = $request->file('file')->store('csv');
+
+    // Lire le fichier CSV
+    $file = Storage::get($path);
+    $lines = explode(PHP_EOL, $file);
+    $header = str_getcsv(array_shift($lines));
+
+    foreach ($lines as $line) {
+        $data = str_getcsv($line);
+
+        if (count($data) == count($header)) {
+            $employeData = array_combine($header, $data);
+
+            // Validation des données d'employé
+            $validator = Validator::make($employeData, [
+                'nom' => 'required|string|max:255',
+                'prenom' => 'required|string|max:255',
+                'adresse' => 'required|string',
+                'telephone' => 'required|string|max:20',
+                'email' => 'required|email|unique:employes,email',
+                'role' => 'required|in:simple,vigile,administrateur',
+                'fonction' => 'nullable|string|max:255',
+                'departement_id' => 'nullable|exists:departements,id',
+                'password' => 'required|string|min:8',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json(['error' => 'Validation Error', 'messages' => $validator->errors()], 422);
+            }
+
+            // Création de l'employé
+            $employeData['password'] = Hash::make($employeData['password']);
+            Employe::create($employeData);
+        }
+    }
+
+    return response()->json(['message' => 'Employés importés avec succès'], 201);
 }
 
 
